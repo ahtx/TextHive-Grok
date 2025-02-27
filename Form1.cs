@@ -18,7 +18,7 @@ namespace TextHiveGrok
         private Button? searchButton;
         private Button? clearButton;
         private ListView? fileList;
-        private TextBox? previewBox;
+        private RichTextBox? previewBox;
         private ListView? relatedFilesView;
         private Label? currentFileLabel;
         internal List<string> folders = new List<string>();
@@ -93,22 +93,23 @@ namespace TextHiveGrok
                 RowCount = 4, // Increased to include search row
                 ColumnCount = 2,
                 BackColor = SystemColors.Control,
-                Padding = new Padding(5) // Minimal vertical space
+                
             };
             mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); // Left panel (33%)
             mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 67F)); // Right panel (67%)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Search/buttons row (auto, minimized vertical space)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F)); // File list/editor row (50% for larger editor)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F)); // Clustering row (50% for 6-8 rows)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Status bar row
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,20)); // Status bar row
             Controls.Add(mainLayout!);
 
             // Left panel (search, file list)
-            Panel leftPanel = new Panel
+            var leftPanel = new Panel
             {
                 Dock = DockStyle.Fill,
                 BackColor = SystemColors.Control,
-                Padding = new Padding(10)
+                Padding = new Padding(0, 25, 0, 0)
+
             };
 
             // Search controls (below menu, above file list)
@@ -116,6 +117,7 @@ namespace TextHiveGrok
             {
                 Width = 300, // Increased width
                 Height = 25,
+                Left=100,
                 PlaceholderText = "Search for files...",
                 BackColor = SystemColors.Window, // Default white background
                 ForeColor = SystemColors.WindowText,
@@ -145,16 +147,15 @@ namespace TextHiveGrok
 
             var searchPanel = new FlowLayoutPanel
             {
-                Dock = DockStyle.Top,
                 AutoSize = true,
+                Dock = DockStyle.Top,
                 FlowDirection = FlowDirection.LeftToRight,
-                Padding = new Padding(10)
+
             };
             searchPanel.Controls.Add(searchBox!);
             searchPanel.Controls.Add(searchButton!);
             searchPanel.Controls.Add(clearButton!);
 
-            leftPanel.Controls.Add(searchPanel);
 
             fileList = new ListView
             {
@@ -165,7 +166,7 @@ namespace TextHiveGrok
                 BackColor = SystemColors.Window,
                 ForeColor = SystemColors.WindowText,
                 Font = new Font("Segoe UI", 10, FontStyle.Regular),
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.FixedSingle,
             };
             fileList!.Columns.Add("File", 250);
             fileList!.Columns.Add("Size", 100);
@@ -174,16 +175,19 @@ namespace TextHiveGrok
             fileList!.ColumnClick += FileList_ColumnClick; // For sorting
             fileList!.DoubleClick += FileList_DoubleClick; // Load file on double-click
 
-            leftPanel.Controls.Add(fileList!);
-
-            // Right panel (preview, related files)
-            Panel rightPanel = new Panel
+            var filesPanel = new Panel()
             {
                 Dock = DockStyle.Fill,
-                BackColor = SystemColors.Control,
-                Padding = new Padding(10)
+                Padding=new Padding(3,0,0,0)
+                
             };
-            rightPanel.Controls.Add(CreateRightPanel());
+            filesPanel.Controls.Add(fileList);
+
+            leftPanel.Controls.Add(filesPanel!);
+            leftPanel.Controls.Add(searchPanel);
+
+            // Right panel (preview, related files)
+            var rightPanel = CreateRightPanel();
 
             // Add panels to layout
             if (mainLayout != null)
@@ -199,13 +203,11 @@ namespace TextHiveGrok
             {
                 BackColor = SystemColors.Control,
                 ForeColor = SystemColors.ControlText,
-                Font = new Font("Segoe UI", 10, FontStyle.Regular)
             };
             statusLabel = new ToolStripStatusLabel("Ready")
             {
                 Spring = true,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Font = new Font("Segoe UI", 10, FontStyle.Regular)
             };
             if (statusStrip != null)
             {
@@ -216,7 +218,12 @@ namespace TextHiveGrok
 
         private Panel CreateRightPanel()
         {
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = SystemColors.Control, Padding = new Padding(10) };
+            var panel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = SystemColors.Control,
+                Padding = new Padding(0, 31, 3, 0),
+            };
 
             // Current file label
             currentFileLabel = new Label
@@ -226,27 +233,35 @@ namespace TextHiveGrok
                 TextAlign = ContentAlignment.MiddleLeft,
                 Font = new Font("Segoe UI", 10, FontStyle.Regular)
             };
-            panel.Controls.Add(currentFileLabel);
 
             // Preview box (taller and larger, editable with scrollbars)
-            previewBox = new TextBox
+            previewBox = new RichTextBox
             {
                 Dock = DockStyle.Fill, // Use Fill to take up more vertical space
                 Height = 400, // Much taller editor for 6-8+ rows of text
                 Multiline = true,
-                ScrollBars = ScrollBars.Both,
+                ScrollBars = RichTextBoxScrollBars.Both,
+
                 BackColor = SystemColors.Window,
                 ForeColor = SystemColors.WindowText,
+
+                BorderStyle = BorderStyle.None,
                 Font = new Font("Segoe UI", 10, FontStyle.Regular),
-                BorderStyle = BorderStyle.FixedSingle
             };
             previewBox!.TextChanged += PreviewBox_TextChanged; // Save on change
-            panel.Controls.Add(previewBox!);
+
+            var previewPanel = new Panel()
+            {
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.FixedSingle,
+
+            };
+            previewPanel.Controls.Add(previewBox);
 
             // Related files view (clustering, resized to 6-8 rows, sortable)
             relatedFilesView = new ListView
             {
-                Dock = DockStyle.Bottom, // Position at bottom of right panel
+                Dock = DockStyle.Bottom,
                 Height = 150, // Reduced height for 6-8 rows (adjust based on font size)
                 View = View.Details,
                 FullRowSelect = true,
@@ -254,12 +269,25 @@ namespace TextHiveGrok
                 BackColor = SystemColors.Window,
                 ForeColor = SystemColors.WindowText,
                 Font = new Font("Segoe UI", 10, FontStyle.Regular),
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.FixedSingle,
+                
             };
+
+
             relatedFilesView!.Columns.Add("File", 250);
             relatedFilesView!.Columns.Add("Related Words", 250);
             relatedFilesView!.ColumnClick += RelatedFilesView_ColumnClick; // For sorting
             relatedFilesView!.DoubleClick += RelatedFilesView_DoubleClick; // Load file on double-click
+
+            var upperPanel = new Panel()
+            {
+                Dock = DockStyle.Fill,
+            };
+            
+            upperPanel.Controls.Add(previewPanel);
+            upperPanel.Controls.Add(currentFileLabel);
+
+            panel.Controls.Add(upperPanel);
             panel.Controls.Add(relatedFilesView!);
 
             return panel;
@@ -620,7 +648,7 @@ namespace TextHiveGrok
                     var relatedWords = cluster.Value.Select(f => Path.GetFileName(f))
                         .Where(f => fileContents.Keys.Any(k => Path.GetFileName(k) == f && fileContents.TryGetValue(k, out string? content) && content?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true))
                         .Take(6) // Show up to 6 most related files
-                        .Select(f => 
+                        .Select(f =>
                         {
                             var content = fileContents.Values.FirstOrDefault(v => Path.GetFileName(fileContents.Keys.FirstOrDefault(k => v == k)) == f) ?? string.Empty;
                             return new { File = f, Words = GetImportantWords(content, 6, searchTerm) };
@@ -656,7 +684,7 @@ namespace TextHiveGrok
                 .Take(count)
                 .Select(w => w.Word)
                 .ToList();
-        
+
             return words.Any() ? words : new List<string> { "No related words found" };
         }
 
