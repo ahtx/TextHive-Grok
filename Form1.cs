@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text; // Added for StringBuilder
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -21,9 +22,13 @@ namespace TextHiveGrok
         private TextBox? previewBox;
         private ListView? relatedFilesView;
         private Label? currentFileLabel;
+        private TextBox? promptBox;
+        private Button? askButton;
+        private TextBox? responseBox;
         internal List<string> folders = new List<string>();
         internal List<string> extensions = new List<string> { ".txt" }; // Default to .txt
         private Dictionary<string, string> fileContents = new Dictionary<string, string>();
+        private Dictionary<string, HashSet<string>> invertedIndex = new(); // Inverted index for RAG
         private MenuStrip? menuStrip;
         private ToolStripMenuItem? configureMenu;
         private StatusStrip? statusStrip;
@@ -35,8 +40,8 @@ namespace TextHiveGrok
         {
             // Form setup
             Text = "TextOrganizer by Amir Husain";
-            Size = new Size(1000, 700);
-            MinimumSize = new Size(800, 500);
+            Size = new Size(1000, 800); // Increased height for prompt panel
+            MinimumSize = new Size(800, 600);
             StartPosition = FormStartPosition.CenterScreen;
             // Default Windows look and feel (no custom colors, using system theme)
             FormBorderStyle = FormBorderStyle.Sizable;
@@ -90,16 +95,17 @@ namespace TextHiveGrok
             mainLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                RowCount = 4, // Increased to include search row
+                RowCount = 5, // Increased to include prompt panel
                 ColumnCount = 2,
                 BackColor = SystemColors.Control,
-                Padding = new Padding(5) // Minimal vertical space
+                Padding = new Padding(2) // Minimal vertical space
             };
             mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); // Left panel (33%)
             mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 67F)); // Right panel (67%)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Search/buttons row (auto, minimized vertical space)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F)); // File list/editor row (50% for larger editor)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F)); // Clustering row (50% for 6-8 rows)
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 40F)); // File list/editor row (40% for larger editor)
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 30F)); // Clustering row (30% for 6-8 rows)
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 20F)); // Prompt panel row (20%)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Status bar row
             Controls.Add(mainLayout!);
 
@@ -108,7 +114,7 @@ namespace TextHiveGrok
             {
                 Dock = DockStyle.Fill,
                 BackColor = SystemColors.Control,
-                Padding = new Padding(10)
+                Padding = new Padding(2)
             };
 
             // Search controls (below menu, above file list)
@@ -148,16 +154,30 @@ namespace TextHiveGrok
                 Dock = DockStyle.Top,
                 AutoSize = true,
                 FlowDirection = FlowDirection.LeftToRight,
-                Padding = new Padding(10)
+                Padding = new Padding(1,24,24,1)
             };
             searchPanel.Controls.Add(searchBox!);
             searchPanel.Controls.Add(searchButton!);
             searchPanel.Controls.Add(clearButton!);
 
-            leftPanel.Controls.Add(searchPanel);
+            var searchContainerPanel = new Panel
+            {
+                
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                BackColor = SystemColors.Control
+            };
+            searchContainerPanel.Controls.Add(searchPanel);
+
+            var fileListPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = SystemColors.Control
+            };
 
             fileList = new ListView
             {
+                Padding = new Padding(1,70,1,1),
                 Dock = DockStyle.Fill,
                 View = View.Details,
                 FullRowSelect = true,
@@ -174,24 +194,27 @@ namespace TextHiveGrok
             fileList!.ColumnClick += FileList_ColumnClick; // For sorting
             fileList!.DoubleClick += FileList_DoubleClick; // Load file on double-click
 
-            leftPanel.Controls.Add(fileList!);
+            fileListPanel.Controls.Add(fileList!);
 
-            // Right panel (preview, related files)
+            leftPanel.Controls.Add(searchContainerPanel);
+            leftPanel.Controls.Add(fileListPanel);
+
+            // Right panel (preview, related files, prompt)
             Panel rightPanel = new Panel
             {
                 Dock = DockStyle.Fill,
                 BackColor = SystemColors.Control,
-                Padding = new Padding(10)
+                Padding = new Padding(2)
             };
             rightPanel.Controls.Add(CreateRightPanel());
 
             // Add panels to layout
             if (mainLayout != null)
             {
-                mainLayout.Controls.Add(leftPanel, 0, 1); // Left panel spans all rows
-                mainLayout.Controls.Add(rightPanel, 1, 1); // Right panel spans all rows
-                mainLayout.SetRowSpan(leftPanel, 3); // Span left panel across all rows
-                mainLayout.SetRowSpan(rightPanel, 3); // Span right panel across all rows
+                mainLayout.Controls.Add(leftPanel, 0, 1); // Left panel spans file list, clustering, and prompt rows
+                mainLayout.Controls.Add(rightPanel, 1, 1); // Right panel spans preview, clustering, and prompt rows
+                mainLayout.SetRowSpan(leftPanel, 4); // Span left panel across file list, clustering, prompt, and status
+                mainLayout.SetRowSpan(rightPanel, 4); // Span right panel across preview, clustering, prompt, and status
             }
 
             // Status strip
@@ -216,7 +239,7 @@ namespace TextHiveGrok
 
         private Panel CreateRightPanel()
         {
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = SystemColors.Control, Padding = new Padding(10) };
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = SystemColors.Control, Padding = new Padding(2) };
 
             // Current file label
             currentFileLabel = new Label
@@ -226,13 +249,13 @@ namespace TextHiveGrok
                 TextAlign = ContentAlignment.MiddleLeft,
                 Font = new Font("Segoe UI", 10, FontStyle.Regular)
             };
-            panel.Controls.Add(currentFileLabel);
+            panel.Controls.Add(currentFileLabel!);
 
             // Preview box (taller and larger, editable with scrollbars)
             previewBox = new TextBox
             {
                 Dock = DockStyle.Fill, // Use Fill to take up more vertical space
-                Height = 400, // Much taller editor for 6-8+ rows of text
+                Height = 300, // Taller editor for 6-8+ rows of text (adjust as needed)
                 Multiline = true,
                 ScrollBars = ScrollBars.Both,
                 BackColor = SystemColors.Window,
@@ -261,6 +284,65 @@ namespace TextHiveGrok
             relatedFilesView!.ColumnClick += RelatedFilesView_ColumnClick; // For sorting
             relatedFilesView!.DoubleClick += RelatedFilesView_DoubleClick; // Load file on double-click
             panel.Controls.Add(relatedFilesView!);
+
+            // Prompt panel (for RAG)
+            var promptPanel = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 100, // Increased height for larger fields
+                BackColor = SystemColors.Control,
+                Padding = new Padding(2)
+            };
+
+            promptBox = new TextBox
+            {
+                Dock = DockStyle.Top,
+                Height = 50,
+                Multiline = true,
+                BackColor = SystemColors.Window,
+                ForeColor = SystemColors.WindowText,
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                BorderStyle = BorderStyle.FixedSingle,
+                PlaceholderText = "Ask a question about your text files..."
+            };
+            promptBox.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) AskQuestion(); };
+
+            askButton = new Button
+            {
+                Text = "Ask",
+                Width = 80,
+                Height = 50, // Match height with promptBox
+                BackColor = SystemColors.ButtonFace,
+                ForeColor = SystemColors.ControlText,
+                FlatStyle = FlatStyle.Standard
+            };
+            askButton!.Click += (s, e) => AskQuestion();
+
+            responseBox = new TextBox
+            {
+                Dock = DockStyle.Fill,
+                Multiline = true,
+                ReadOnly = true,
+                Width = panel.Width - 10,
+                Height = 100, // At least 5 rows high
+                BackColor = SystemColors.Window,
+                ForeColor = SystemColors.WindowText,
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            var promptLayout = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                FlowDirection = FlowDirection.LeftToRight,
+                Padding = new Padding(2)
+            };
+            promptLayout.Controls.Add(promptBox!);
+            promptLayout.Controls.Add(askButton!);
+
+            promptPanel.Controls.Add(promptLayout);
+            promptPanel.Controls.Add(responseBox!);
+            panel.Controls.Add(promptPanel);
 
             return panel;
         }
@@ -359,7 +441,7 @@ namespace TextHiveGrok
             if (fileContents.ContainsKey(filePath))
             {
                 previewBox!.Text = fileContents[filePath];
-                currentFileLabel!.Text = filePath;
+                currentFileLabel!.Text = $"Current File: {Path.GetFileName(filePath)}";
             }
         }
 
@@ -397,6 +479,7 @@ namespace TextHiveGrok
             statusLabel.Text = "Loading files...";
             Enabled = false;
             fileContents.Clear();
+            invertedIndex.Clear(); // Clear inverted index
             fileList.Items.Clear();
 
             await Task.Run(() =>
@@ -410,7 +493,9 @@ namespace TextHiveGrok
                             try
                             {
                                 var fileInfo = new FileInfo(file);
-                                fileContents[file] = File.ReadAllText(file);
+                                var content = File.ReadAllText(file);
+                                fileContents[file] = content;
+                                BuildInvertedIndex(file, content);
                                 Invoke((MethodInvoker)(() =>
                                 {
                                     var item = new ListViewItem(new[] { Path.GetFileName(file), FormatFileSize(fileInfo.Length), fileInfo.LastWriteTime.ToString("g") });
@@ -428,6 +513,20 @@ namespace TextHiveGrok
 
             statusLabel.Text = $"Loaded {fileContents.Count} files";
             Enabled = true;
+        }
+
+        private void BuildInvertedIndex(string filePath, string content)
+        {
+            var words = content.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => w.Length > 3 && !IsCommonWord(w.ToLower()))
+                .Select(w => w.ToLower())
+                .Distinct();
+            foreach (var word in words)
+            {
+                if (!invertedIndex.ContainsKey(word))
+                    invertedIndex[word] = new HashSet<string>();
+                invertedIndex[word].Add(filePath);
+            }
         }
 
         private string FormatFileSize(long bytes)
@@ -452,7 +551,7 @@ namespace TextHiveGrok
                 if (fullPath != null)
                 {
                     previewBox.Text = fileContents[fullPath];
-                    currentFileLabel!.Text = fullPath;
+                    currentFileLabel!.Text = $"Current File: {Path.GetFileName(fullPath)}";
                     if (Control.ModifierKeys == Keys.Control)
                     {
                         System.Diagnostics.Process.Start("notepad.exe", fullPath);
@@ -480,7 +579,7 @@ namespace TextHiveGrok
                 if (fullPath != null)
                 {
                     previewBox.Text = fileContents[fullPath];
-                    currentFileLabel!.Text = fullPath;
+                    currentFileLabel!.Text = $"Current File: {Path.GetFileName(fullPath)}";
                 }
             }
         }
@@ -503,7 +602,7 @@ namespace TextHiveGrok
                 if (fullPath != null)
                 {
                     previewBox.Text = fileContents[fullPath];
-                    currentFileLabel!.Text = fullPath;
+                    currentFileLabel!.Text = $"Current File: {Path.GetFileName(fullPath)}";
                 }
             }
         }
@@ -713,6 +812,78 @@ namespace TextHiveGrok
         {
             MessageBox.Show("TextOrganizer by Amir Husain\nVersion 1.0", "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
+        private void AskQuestion()
+        {
+            if (promptBox == null || responseBox == null) return;
+
+            string question = promptBox.Text.Trim();
+            if (string.IsNullOrEmpty(question))
+            {
+                responseBox.Text = "Please enter a question.";
+                return;
+            }
+
+            string response = GenerateResponse(question);
+            responseBox.Text = response;
+            statusLabel!.Text = $"Answered question: '{question}'";
+        }
+
+        private string GenerateResponse(string question)
+        {
+            var words = question.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(w => w.ToLower())
+                .Where(w => w.Length > 3 && !IsCommonWord(w))
+                .ToList();
+
+            if (!words.Any())
+            {
+                return "Please provide a more specific question.";
+            }
+
+            var relevantFiles = new List<string>();
+            foreach (var word in words)
+            {
+                if (invertedIndex.TryGetValue(word, out HashSet<string>? files))
+                {
+                    relevantFiles.AddRange(files);
+                }
+            }
+
+            if (!relevantFiles.Any())
+            {
+                return "No relevant information found in your text files.";
+            }
+
+            // Aggregate content from relevant files
+            var content = new StringBuilder();
+            var uniqueFiles = relevantFiles.Distinct().Take(5).ToList(); // Limit to 5 files for brevity
+            foreach (var file in uniqueFiles)
+            {
+                if (fileContents.TryGetValue(file, out string? fileContent))
+                {
+                    content.AppendLine($"From {Path.GetFileName(file)}: {fileContent.Substring(0, Math.Min(200, fileContent.Length))}...");
+                }
+            }
+
+            // Simple rule-based response generation
+            if (question.Contains("what") || question.Contains("describe"))
+            {
+                return $"Based on your text files, here’s some information: {content.ToString().Trim()}";
+            }
+            else if (question.Contains("who") || question.Contains("author"))
+            {
+                return "I can’t determine authors from the text, but here are relevant snippets: " + content.ToString().Trim();
+            }
+            else if (question.Contains("when") || question.Contains("date"))
+            {
+                return "Relevant dates from files: " + string.Join(", ", uniqueFiles.Select(f => new FileInfo(f).LastWriteTime.ToString("g")));
+            }
+            else
+            {
+                return $"Here’s what I found: {content.ToString().Trim()}";
+            }
+        }
     }
 
     public class ConfigureForm : Form
@@ -739,7 +910,7 @@ namespace TextHiveGrok
                 Dock = DockStyle.Fill,
                 RowCount = 3,
                 ColumnCount = 2,
-                Padding = new Padding(10)
+                Padding = new Padding(2)
             };
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
