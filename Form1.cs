@@ -295,24 +295,25 @@ namespace TextHiveGrok
 
         private void PreviewBox_TextChanged(object? sender, EventArgs e)
         {
-            if (fileList?.SelectedItems.Count > 0 && previewBox != null)
-            {
-                var selectedFile = fileList.SelectedItems[0].Text;
-                var fullPath = fileContents.Keys.FirstOrDefault(f => Path.GetFileName(f) == selectedFile);
-                if (fullPath != null)
-                {
-                    try
-                    {
-                        File.WriteAllText(fullPath, previewBox.Text);
-                        fileContents[fullPath] = previewBox.Text;
-                        statusLabel!.Text = $"Saved changes to {Path.GetFileName(fullPath)}";
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
+            // Remove automatic saving
+            // if (fileList?.SelectedItems.Count > 0 && previewBox != null)
+            // {
+            //     var selectedFile = fileList.SelectedItems[0].Text;
+            //     var fullPath = fileContents.Keys.FirstOrDefault(f => Path.GetFileName(f) == selectedFile);
+            //     if (fullPath != null)
+            //     {
+            //         try
+            //         {
+            //             File.WriteAllText(fullPath, previewBox.Text);
+            //             fileContents[fullPath] = previewBox.Text;
+            //             statusLabel!.Text = $"Saved changes to {Path.GetFileName(fullPath)}";
+            //         }
+            //         catch (Exception ex)
+            //         {
+            //             MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //         }
+            //     }
+            // }
         }
 
         private void SearchButton_Click(object? sender, EventArgs e)
@@ -334,8 +335,16 @@ namespace TextHiveGrok
                 var fullPath = fileContents.Keys.FirstOrDefault(f => Path.GetFileName(f) == selectedFile);
                 if (fullPath != null)
                 {
-                    File.WriteAllText(fullPath, previewBox!.Text);
-                    MessageBox.Show($"Saved {Path.GetFileName(fullPath)} successfully.", "File Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try
+                    {
+                        File.WriteAllText(fullPath, previewBox!.Text);
+                        fileContents[fullPath] = previewBox.Text; // Update the dictionary with the new content
+                        CustomMessageBox.Show($"Saved {Path.GetFileName(fullPath)} successfully.", "File Saved");
+                    }
+                    catch (Exception ex)
+                    {
+                        CustomMessageBox.Show($"Error saving file: {ex.Message}", "Error");
+                    }
                 }
             }
         }
@@ -344,7 +353,7 @@ namespace TextHiveGrok
         {
             if (folders.Count == 0)
             {
-                MessageBox.Show("Please add a folder first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show("Please add a folder first.", "Error");
                 return;
             }
 
@@ -368,7 +377,7 @@ namespace TextHiveGrok
         {
             if (folders.Count == 0)
             {
-                MessageBox.Show("Please add a folder first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show("Please add a folder first.", "Error");
                 return;
             }
 
@@ -569,11 +578,11 @@ namespace TextHiveGrok
             }
             catch (InvalidOperationException ex)
             {
-                MessageBox.Show($"Search error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Search error: {ex.Message}", "Error");
             }
             catch (NullReferenceException ex)
             {
-                MessageBox.Show($"Search error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Search error: {ex.Message}", "Error");
             }
         }
 
@@ -666,11 +675,11 @@ namespace TextHiveGrok
             }
             catch (InvalidOperationException ex)
             {
-                MessageBox.Show($"Clustering error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Clustering error: {ex.Message}", "Error");
             }
             catch (NullReferenceException ex)
             {
-                MessageBox.Show($"Clustering error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Clustering error: {ex.Message}", "Error");
             }
         }
 
@@ -717,7 +726,7 @@ namespace TextHiveGrok
             }
             catch (JsonException ex)
             {
-                MessageBox.Show($"Configuration error: {ex.Message}. Using default settings.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomMessageBox.Show($"Configuration error: {ex.Message}. Using default settings.", "Warning");
                 folders.Clear();
                 extensions.Clear();
                 if (!extensions.Contains(".txt")) extensions.Add(".txt"); // Default to .txt
@@ -733,13 +742,13 @@ namespace TextHiveGrok
             }
             catch (IOException ex)
             {
-                MessageBox.Show($"Error saving configuration: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Error saving configuration: {ex.Message}", "Error");
             }
         }
 
         private void ShowAboutBox(object? sender, EventArgs e)
         {
-            MessageBox.Show("TextOrganizer by Amir Husain\nVersion 1.0", "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            CustomMessageBox.Show("TextOrganizer by Amir Husain\nVersion 1.0", "About");
         }
     }
 
