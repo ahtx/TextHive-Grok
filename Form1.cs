@@ -28,7 +28,6 @@ namespace TextHiveGrok
         private ToolStripMenuItem? configureMenu;
         private StatusStrip? statusStrip;
         private ToolStripStatusLabel? statusLabel;
-        private TableLayoutPanel? mainLayout;
         private string configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TextFileOrganizer.json"); // JSON config path
 
         public MainForm()
@@ -86,22 +85,6 @@ namespace TextHiveGrok
             menuStrip?.Items.Add(aboutMenuItem);
             Controls.Add(menuStrip!);
 
-            // Main layout panel for flexible sizing
-            mainLayout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                RowCount = 4, // Increased to include search row
-                ColumnCount = 2,
-                BackColor = SystemColors.Control,
-                
-            };
-            mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F)); // Left panel (33%)
-            mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 67F)); // Right panel (67%)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Search/buttons row (auto, minimized vertical space)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F)); // File list/editor row (50% for larger editor)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F)); // Clustering row (50% for 6-8 rows)
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,20)); // Status bar row
-            Controls.Add(mainLayout!);
 
             // Left panel (search, file list)
             var leftPanel = new Panel
@@ -117,7 +100,7 @@ namespace TextHiveGrok
             {
                 Width = 300, // Increased width
                 Height = 25,
-                Left=100,
+                Left = 100,
                 PlaceholderText = "Search for files...",
                 BackColor = SystemColors.Window, // Default white background
                 ForeColor = SystemColors.WindowText,
@@ -178,25 +161,28 @@ namespace TextHiveGrok
             var filesPanel = new Panel()
             {
                 Dock = DockStyle.Fill,
-                Padding=new Padding(3,0,0,0)
-                
+                Padding = new Padding(3, 0, 0, 0)
             };
             filesPanel.Controls.Add(fileList);
 
             leftPanel.Controls.Add(filesPanel!);
             leftPanel.Controls.Add(searchPanel);
 
-            // Right panel (preview, related files)
             var rightPanel = CreateRightPanel();
 
-            // Add panels to layout
-            if (mainLayout != null)
+            var splitContainer = new SplitContainer
             {
-                mainLayout.Controls.Add(leftPanel, 0, 1); // Left panel spans all rows
-                mainLayout.Controls.Add(rightPanel, 1, 1); // Right panel spans all rows
-                mainLayout.SetRowSpan(leftPanel, 3); // Span left panel across all rows
-                mainLayout.SetRowSpan(rightPanel, 3); // Span right panel across all rows
-            }
+                Dock = DockStyle.Fill,
+                Orientation = Orientation.Vertical,
+                Panel1MinSize = 100,
+                Panel2MinSize = 100,
+                BorderStyle = BorderStyle.Fixed3D
+            };
+
+            splitContainer.Panel1.Controls.Add(leftPanel);
+            splitContainer.Panel2.Controls.Add(rightPanel);
+
+            Controls.Add(splitContainer);
 
             // Status strip
             statusStrip = new StatusStrip
@@ -270,7 +256,6 @@ namespace TextHiveGrok
                 ForeColor = SystemColors.WindowText,
                 Font = new Font("Segoe UI", 10, FontStyle.Regular),
                 BorderStyle = BorderStyle.FixedSingle,
-                
             };
 
 
@@ -283,7 +268,7 @@ namespace TextHiveGrok
             {
                 Dock = DockStyle.Fill,
             };
-            
+
             upperPanel.Controls.Add(previewPanel);
             upperPanel.Controls.Add(currentFileLabel);
 
