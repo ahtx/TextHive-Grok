@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "QYrFGFB+PPk=",
+  "dgSpecHash": "UlBGVLndMPU=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Amir Husain\\Dropbox\\Projects\\TextHive-Grok\\TextHive-Grok.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Project\\Amir\\TextHive-Grok\\TextHiveGrok.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Kumail.Rizvi\\.nuget\\packages\\handycontrols\\3.5.3\\handycontrols.3.5.3.nupkg.sha512"
+  ],
   "logs": []
 }
