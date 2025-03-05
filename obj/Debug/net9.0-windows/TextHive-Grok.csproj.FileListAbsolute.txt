@@ -12,3 +12,4 @@ C:\Users\Amir Husain\Dropbox\Projects\TextHive-Grok\obj\Debug\net9.0-windows\ref
 C:\Users\Amir Husain\Dropbox\Projects\TextHive-Grok\obj\Debug\net9.0-windows\TextHive-Grok.pdb
 C:\Users\Amir Husain\Dropbox\Projects\TextHive-Grok\obj\Debug\net9.0-windows\TextHive-Grok.genruntimeconfig.cache
 C:\Users\Amir Husain\Dropbox\Projects\TextHive-Grok\obj\Debug\net9.0-windows\ref\TextHive-Grok.dll
+C:\Users\Amir Husain\Dropbox\Projects\TextHive-Grok\obj\Debug\net9.0-windows\TextHive-Grok.sourcelink.json
