@@ -107,8 +107,7 @@ namespace TextHiveGrok.ViewModels
 
         private void UpdateRelatedFiles()
         {
-            if (SelectedFile == null) return;
-            var related = FileHelper.GetRelatedFiles(SelectedFile.FullPath, SearchText);
+            var related = FileHelper.GetRelatedFiles(SearchText);
             RelatedFiles.Clear();
             foreach (var file in related)
             {
@@ -122,13 +121,12 @@ namespace TextHiveGrok.ViewModels
             {
                 using (StreamWriter writer = new(path, false))
                 {
-                     writer.Write(content);
+                    writer.Write(content);
                 }
                 FileHelper.LoadFiles();
             }
             catch (Exception ex)
             {
-                // Log or handle the exception appropriately
                 throw new IOException($"Failed to save file: {path}", ex);
             }
         }

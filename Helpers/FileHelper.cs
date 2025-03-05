@@ -128,7 +128,7 @@ namespace TextHiveGrok.Helpers
             return results;
         }
 
-        public static List<RelatedFile> GetRelatedFiles(string filePath, string searchTerm)
+        public static List<RelatedFile> GetRelatedFiles(string searchTerm)
         {
             var relatedFiles = new List<RelatedFile>();
             if (string.IsNullOrEmpty(searchTerm)) return relatedFiles;

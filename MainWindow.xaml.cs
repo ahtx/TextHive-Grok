@@ -20,9 +20,6 @@ namespace TextHiveGrok
             this.DataContext = _vm;
         }
 
-
-
-        // Event handlers
         private void SearchBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -37,7 +34,7 @@ namespace TextHiveGrok
             _vm.PerformSearch();
         }
 
-        private void ClearButton_Click(object sender, RoutedEventArgs e)
+        private void ClearButton_Click(object? sender, RoutedEventArgs? e)
         {
             _vm.SearchText = searchBox.Text = "";
             _vm.PerformSearch();
@@ -47,7 +44,6 @@ namespace TextHiveGrok
         {
 
         }
-
 
         private void fileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -105,7 +101,6 @@ namespace TextHiveGrok
             }
         }
 
-
         private void HanldeOpenInNotepad(object sender, RoutedEventArgs e)
         {
             if (_vm.SelectedFile != null)
@@ -140,13 +135,26 @@ namespace TextHiveGrok
             CustomMessageBox.Show("TextOrganizer by Amir Husain\nVersion 1.0", "About", this);
         }
 
-        private void HandleSaveFile(object sender, RoutedEventArgs e)
+        private void HandleSaveFile(object? sender, RoutedEventArgs? e)
         {
+            if (_vm.PreviewText == previewBox.Text)
+            {
+                return;
+            }
+
             _vm.PreviewText = previewBox.Text;
             var result = _vm.SaveCurrentFile();
             if (result)
             {
                 CustomMessageBox.Show($"Saved {Path.GetFileName(_vm.SelectedFile?.FullPath)} successfully.", "File Saved", this);
+            }
+        }
+
+        private void HandleWindowKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                HandleSaveFile(null, null);
             }
         }
     }
