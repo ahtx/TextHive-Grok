@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TextHive-Grok")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e87ea44f6a534db7a40b4aff975b5c20758b6ada")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c383eb4b0237dacb91094780a2ba7979415273a5")]
 [assembly: System.Reflection.AssemblyProductAttribute("TextHive-Grok")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TextHive-Grok")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
