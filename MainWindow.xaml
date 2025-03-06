@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TextOrganizer by Amir Husain"
         xmlns:hc="https://handyorg.github.io/handycontrol"
+        xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
         KeyDown="HandleWindowKeyDown"
         Height="700"
-        Width="1200"
+        Width="1260"
         MinHeight="500"
         MinWidth="800"
         WindowStartupLocation="CenterScreen">
@@ -117,6 +118,60 @@
                            Height="25"
                            Margin="0,0,0,5" />
 
+                <!-- Search and Font Size Controls -->
+                <StackPanel DockPanel.Dock="Top"
+                            Orientation="Horizontal"
+                            Margin="0,0,0,5">
+                    <hc:ElementGroup Orientation="Horizontal"
+                                     Layout="Stack">
+                        <TextBox x:Name="findTextBox"
+                                 Width="200"
+                                 Style="{StaticResource TextBoxExtend}"
+                                 hc:InfoElement.Placeholder="Find text..." />
+                        <Button x:Name="findButton"
+                                Content="🔍"
+                                Style="{StaticResource ButtonPrimary}"
+                                Click="FindButton_Click" />
+                    </hc:ElementGroup>
+                    <hc:Divider LineStrokeThickness="2"
+                                LineStroke="{DynamicResource DarkPrimaryBrush}"
+                                Orientation="Vertical"
+                                MaxHeight="25" />
+                    <hc:ElementGroup Orientation="Horizontal"
+                                     Layout="Stack">
+                        <TextBox x:Name="replaceTextBox"
+                                 Width="200"
+                                 Style="{StaticResource TextBoxExtend}"
+                                 hc:InfoElement.Placeholder="Replace with..." />
+
+                        <Button x:Name="replaceButton"
+                                Content="Replace"
+                                Style="{StaticResource ButtonPrimary}"
+                                Click="ReplaceButton_Click" />
+                        <Button x:Name="replaceAllButton"
+                                Content="Replace All"
+                                Style="{StaticResource ButtonPrimary}"
+                                Click="ReplaceAllButton_Click" />
+                    </hc:ElementGroup>
+
+                    <hc:Divider LineStrokeThickness="2"
+                                LineStroke="{DynamicResource DarkPrimaryBrush}"
+                                Orientation="Vertical"
+                                MaxHeight="25" />
+                    <hc:ElementGroup Orientation="Horizontal"
+                                     Layout="Stack">
+                        <Button x:Name="decreaseFontButton"
+                                Content="A-"
+                                Style="{StaticResource ButtonPrimary}"
+                                Click="DecreaseFontSize_Click" />
+                        <Button x:Name="increaseFontButton"
+                                Content="A+"
+                                Style="{StaticResource ButtonPrimary}"
+                                Click="IncreaseFontSize_Click" />
+                    </hc:ElementGroup>
+
+                </StackPanel>
+
                 <DataGrid x:Name="relatedFilesView"
                           DockPanel.Dock="Bottom"
                           AutoGenerateColumns="False"
@@ -137,18 +192,17 @@
                 </DataGrid>
 
                 <!-- Preview Box -->
-                <TextBox x:Name="previewBox"
-                         Text="{Binding PreviewText}"
-                         TextChanged="PreviewBox_TextChanged"
-                         VerticalContentAlignment="Top"
-                         VerticalAlignment="Stretch"
-                         HorizontalAlignment="Stretch"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Auto"
-                         AcceptsReturn="True"
-                         BorderThickness="1"
-                         BorderBrush="Gray" />
+                <avalonedit:TextEditor x:Name="previewBox"
+                                       Document="{Binding PreviewDocument}"
+                                       ShowLineNumbers="True"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       SyntaxHighlighting="{Binding CurrentSyntaxHighlighting}"
+                                       WordWrap="True"
+                                       VerticalScrollBarVisibility="Auto"
+                                       HorizontalScrollBarVisibility="Auto"
+                                       BorderThickness="1"
+                                       BorderBrush="Gray" />
 
             </DockPanel>
 

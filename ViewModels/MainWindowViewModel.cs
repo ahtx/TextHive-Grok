@@ -3,6 +3,9 @@ using System.Diagnostics;
 using TextHiveGrok.Models;
 using System.IO;
 using TextHiveGrok.Helpers;
+using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Highlighting;
+using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 
 namespace TextHiveGrok.ViewModels
 {
@@ -10,12 +13,13 @@ namespace TextHiveGrok.ViewModels
     {
         private string _searchText = string.Empty;
         private FileItem? _selectedFile;
-        private string _previewText = string.Empty;
+        private TextDocument _previewDocument;
         private string _statusText = "Ready";
         private string _currentFilePath = string.Empty;
+        private IHighlightingDefinition? _currentSyntaxHighlighting;
 
-        public ObservableCollection<FileItem> Files { get; } = new();
-        public ObservableCollection<RelatedFile> RelatedFiles { get; } = new();
+        public ObservableCollection<FileItem> Files { get; } = [];
+        public ObservableCollection<RelatedFile> RelatedFiles { get; } = [];
 
 
         public string SearchText
@@ -27,13 +31,16 @@ namespace TextHiveGrok.ViewModels
             }
         }
 
-        public string PreviewText
+        public TextDocument PreviewDocument
         {
-            get => _previewText;
-            set
-            {
-                SetProperty(ref _previewText, value);
-            }
+            get => _previewDocument;
+            private set => SetProperty(ref _previewDocument, value);
+        }
+
+        public IHighlightingDefinition? CurrentSyntaxHighlighting
+        {
+            get => _currentSyntaxHighlighting;
+            private set => SetProperty(ref _currentSyntaxHighlighting, value);
         }
 
         public string StatusText
@@ -62,8 +69,8 @@ namespace TextHiveGrok.ViewModels
 
         public MainWindowViewModel()
         {
+            _previewDocument = new TextDocument();
             LoadFiles();
-
         }
 
         public void LoadFiles()
@@ -94,14 +101,16 @@ namespace TextHiveGrok.ViewModels
             UpdateRelatedFiles();
         }
 
-        private async void LoadFilePreview(FileItem? file)
+        private void LoadFilePreview(FileItem? file)
         {
             if (file == null)
             {
                 return;
             }
-            PreviewText = await FileHelper.GetFileContentAsync(file.FullPath);
+            var content = FileHelper.GetFileContent(file.FullPath);
+            _previewDocument.Text = content;
             CurrentFilePath = file.FullPath;
+            UpdateSyntaxHighlighting(file.FullPath);
             UpdateRelatedFiles();
         }
 
@@ -112,22 +121,6 @@ namespace TextHiveGrok.ViewModels
             foreach (var file in related)
             {
                 RelatedFiles.Add(file);
-            }
-        }
-
-        public static void SaveFile(string path, string content)
-        {
-            try
-            {
-                using (StreamWriter writer = new(path, false))
-                {
-                    writer.Write(content);
-                }
-                FileHelper.LoadFiles();
-            }
-            catch (Exception ex)
-            {
-                throw new IOException($"Failed to save file: {path}", ex);
             }
         }
 
@@ -145,12 +138,37 @@ namespace TextHiveGrok.ViewModels
 
         public bool SaveCurrentFile()
         {
-            if (SelectedFile != null && !string.IsNullOrEmpty(PreviewText))
+            var currentFileContent = FileHelper.GetFileContent(SelectedFile!.FullPath);
+            if (currentFileContent == PreviewDocument.Text)
             {
-                SaveFile(SelectedFile.FullPath, PreviewText);
+                return false;
+            }
+            if (SelectedFile != null && _previewDocument != null)
+            {
+                FileHelper.SaveFile(SelectedFile.FullPath, _previewDocument.Text);
                 return true;
             }
             return false;
+        }
+
+        private void UpdateSyntaxHighlighting(string filePath)
+        {
+            var extension = Path.GetExtension(filePath).ToLower();
+            CurrentSyntaxHighlighting = extension switch
+            {
+                ".cs" => HighlightingManager.Instance.GetDefinition("C#"),
+                ".cpp" => HighlightingManager.Instance.GetDefinition("C++"),
+                ".xml" or ".xaml" => HighlightingManager.Instance.GetDefinition("XML"),
+                ".json" => HighlightingManager.Instance.GetDefinition("JavaScript"),
+                ".js" => HighlightingManager.Instance.GetDefinition("JavaScript"),
+                ".java" => HighlightingManager.Instance.GetDefinition("Java"),
+                ".html" or ".htm" => HighlightingManager.Instance.GetDefinition("HTML"),
+                ".css" => HighlightingManager.Instance.GetDefinition("CSS"),
+                ".py" => HighlightingManager.Instance.GetDefinition("Python"),
+                ".vb" => HighlightingManager.Instance.GetDefinition("Visual Basic"),
+                ".php" => HighlightingManager.Instance.GetDefinition("PHP"),
+                _ => HighlightingManager.Instance.GetDefinition("Text")
+            };
         }
     }
 }

@@ -40,11 +40,6 @@ namespace TextHiveGrok
             _vm.PerformSearch();
         }
 
-        private void PreviewBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
-
         private void fileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count != 0)
@@ -120,7 +115,7 @@ namespace TextHiveGrok
             var output = w.ShowDialog();
             if (output == true)
             {
-                ClearButton_Click(null, null);
+                ClearButton_Click(sender, e);
                 _vm.LoadFiles();
             }
         }
@@ -137,12 +132,6 @@ namespace TextHiveGrok
 
         private void HandleSaveFile(object? sender, RoutedEventArgs? e)
         {
-            if (_vm.PreviewText == previewBox.Text)
-            {
-                return;
-            }
-
-            _vm.PreviewText = previewBox.Text;
             var result = _vm.SaveCurrentFile();
             if (result)
             {
@@ -155,6 +144,91 @@ namespace TextHiveGrok
             if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
             {
                 HandleSaveFile(null, null);
+                e.Handled = true;
+            }
+        }
+        private void FindButton_Click(object sender, RoutedEventArgs e)
+        {
+            var searchText = findTextBox.Text;
+            if (string.IsNullOrEmpty(searchText))
+            {
+                return;
+            }
+
+
+            var editor = previewBox;
+            var text = editor.Text;
+
+            var offset = editor.CaretOffset;
+            var nextIndex = text.IndexOf(searchText, offset);
+
+            if (nextIndex == -1)
+            {
+                nextIndex = text.IndexOf(searchText);
+            }
+
+            if (nextIndex != -1)
+            {
+                editor.Select(nextIndex, searchText.Length);
+                editor.ScrollToLine(editor.Document.GetLineByOffset(nextIndex).LineNumber);
+            }
+        }
+
+        private void ReplaceButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(findTextBox.Text)) return;
+
+            var editor = previewBox;
+            if (editor.SelectionLength > 0 && editor.SelectedText == findTextBox.Text)
+            {
+                editor.Document.Replace(editor.SelectionStart, editor.SelectionLength, replaceTextBox.Text);
+                FindButton_Click(sender, e);
+            }
+            else
+            {
+                FindButton_Click(sender, e);
+            }
+        }
+
+        private void ReplaceAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(findTextBox.Text))
+            {
+                return;
+            }
+
+            var editor = previewBox;
+            var text = editor.Text;
+            var searchText = findTextBox.Text;
+            var replaceText = replaceTextBox.Text;
+
+            var offset = 0;
+            while (true)
+            {
+                var index = text.IndexOf(searchText, offset);
+                if (index == -1) { 
+                    break; 
+                }
+
+                editor.Document.Replace(index, searchText.Length, replaceText);
+                offset = index + replaceText.Length;
+                text = editor.Text;
+            }
+        }
+
+        private void IncreaseFontSize_Click(object sender, RoutedEventArgs e)
+        {
+            if (previewBox.FontSize < 72)
+            {
+                previewBox.FontSize += 2;
+            }
+        }
+
+        private void DecreaseFontSize_Click(object sender, RoutedEventArgs e)
+        {
+            if (previewBox.FontSize > 8)
+            {
+                previewBox.FontSize -= 2;
             }
         }
     }

@@ -65,31 +65,38 @@ namespace TextHiveGrok.Helpers
             var files = new List<FileItem>();
             fileContents.Clear();
 
-            foreach (var folder in folders)
+            folders.ForEach(folder =>
             {
-                foreach (var ext in extensions)
+                try
                 {
-                    foreach (var file in Directory.GetFiles(folder, $"*{ext}", SearchOption.AllDirectories))
+                    foreach (var ext in extensions)
                     {
-
-                        var fileInfo = new FileInfo(file);
-                        fileContents[file] = File.ReadAllTextAsync(file).Result;
-                        files.Add(new FileItem
+                        foreach (var file in Directory.GetFiles(folder, $"*{ext}", SearchOption.AllDirectories))
                         {
-                            FileName = Path.GetFileName(file),
-                            FullPath = file,
-                            Size = FormatFileSize(fileInfo.Length),
-                            Modified = fileInfo.LastWriteTime
-                        });
 
+                            var fileInfo = new FileInfo(file);
+                            fileContents[file] = File.ReadAllTextAsync(file).Result;
+                            files.Add(new FileItem
+                            {
+                                FileName = Path.GetFileName(file),
+                                FullPath = file,
+                                Size = FormatFileSize(fileInfo.Length),
+                                Modified = fileInfo.LastWriteTime
+                            });
+
+                        }
                     }
                 }
-            }
+                catch(Exception)
+                {
+                    CustomMessageBox.Show($"Unable to read the files from folder: {folder}", "Error");
+                }
+            });
 
             return files;
         }
 
-        public static async Task<string> GetFileContentAsync(string filePath)
+        public static string GetFileContent(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
             {
@@ -101,7 +108,23 @@ namespace TextHiveGrok.Helpers
                 throw new FileNotFoundException($"The file at '{filePath}' was not found.", filePath);
             }
 
-            return await File.ReadAllTextAsync(filePath);
+            return File.ReadAllText(filePath);
+        }
+
+        public static void SaveFile(string path, string content)
+        {
+            try
+            {
+                using (StreamWriter writer = new(path, false))
+                {
+                    writer.Write(content);
+                }
+                FileHelper.LoadFiles();
+            }
+            catch (Exception ex)
+            {
+                throw new IOException($"Failed to save file: {path}", ex);
+            }
         }
 
         public static List<FileItem> SearchFiles(string searchTerm)

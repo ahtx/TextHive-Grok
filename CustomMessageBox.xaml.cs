@@ -21,8 +21,9 @@ namespace TextHiveGrok
             Close();
         }
 
-        public static void Show(string message, string title, Window window)
+        public static void Show(string message, string title, Window? window=null)
         {
+            window ??= Application.Current.Windows.OfType<MainWindow>().First();
             var messageBox = new CustomMessageBox(message, title, window);
             messageBox.ShowDialog();
         }
