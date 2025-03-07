@@ -1,0 +1,74 @@
+﻿<Window x:Class="TextHiveGrok.Views.ConfigureWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configure TextFileOrganizer"
+        xmlns:hc="https://handyorg.github.io/handycontrol"
+        Height="550"
+        Width="500"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <GroupBox Header="Folders"
+                  Grid.Column="0"
+                  Margin="5">
+            <ListBox ItemsSource="{Binding Folders}"
+                     SelectedItem="{Binding SelectedFolder}" />
+        </GroupBox>
+
+        <GroupBox Header="Extensions"
+                  Grid.Column="1"
+                  Margin="5">
+            <ListBox ItemsSource="{Binding Extensions}"
+                     SelectedItem="{Binding SelectedExtension}" />
+        </GroupBox>
+
+        <StackPanel Grid.Row="1"
+                    Grid.Column="0"
+                    Margin="5">
+            <Button Content="Add Folder"
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding AddFolderCommand}"
+                    Style="{StaticResource ButtonPrimary}"
+                    Margin="0,5" />
+            <Button Content="Remove Folder"
+                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource ButtonDanger}"
+                    Command="{Binding RemoveFolderCommand}"
+                    Margin="0,5" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="5">
+            <Button Content="Add Extension"
+                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource ButtonPrimary}"
+                    Command="{Binding AddExtensionCommand}"
+                    Margin="0,5" />
+
+            <Button Content="Remove Extension"
+                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource ButtonDanger}"
+                    Command="{Binding RemoveExtensionCommand}"
+                    Margin="0,5" />
+        </StackPanel>
+
+        <Button Grid.Row="2"
+                Grid.ColumnSpan="2"
+                Content="Save"
+                HorizontalAlignment="Stretch"
+                Style="{StaticResource ButtonSuccess}"
+                Margin="5"
+                Click="Save_Click" />
+    </Grid>
+</Window>
