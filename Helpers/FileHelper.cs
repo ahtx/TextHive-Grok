@@ -11,10 +11,6 @@ namespace TextHiveGrok.Helpers
         private static List<string> folders = [];
         private static List<string> extensions = [];
 
-        static FileHelper()
-        {
-            LoadConfiguration();
-        }
         public static void LoadConfiguration()
         {
             try

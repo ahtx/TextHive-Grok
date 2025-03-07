@@ -5,6 +5,7 @@
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
         KeyDown="HandleWindowKeyDown"
+        Loaded="Window_Loaded"
         Height="700"
         Width="1260"
         MinHeight="500"

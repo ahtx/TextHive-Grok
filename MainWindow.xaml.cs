@@ -12,10 +12,14 @@ namespace TextHiveGrok
 {
     public partial class MainWindow : System.Windows.Window
     {
-        private readonly MainWindowViewModel _vm;
+        private  MainWindowViewModel? _vm;
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
             _vm = new MainWindowViewModel();
             this.DataContext = _vm;
         }
@@ -206,8 +210,9 @@ namespace TextHiveGrok
             while (true)
             {
                 var index = text.IndexOf(searchText, offset);
-                if (index == -1) { 
-                    break; 
+                if (index == -1)
+                {
+                    break;
                 }
 
                 editor.Document.Replace(index, searchText.Length, replaceText);
